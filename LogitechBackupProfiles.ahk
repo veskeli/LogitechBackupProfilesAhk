@@ -5,7 +5,7 @@
 ;//////////////[variables]///////////////
 SetWorkingDir %A_ScriptDir%
 appfoldername = LogitechBackupProfilesAhk
-version = 0.1
+version = 0.2
 ;____________________________________________________________
 ;____________________________________________________________
 ;//////////////[Gui]///////////////
@@ -18,14 +18,31 @@ Gui Font
 Gui Font, s14
 Gui Add, Button, x0 y80 w404 h49, Load Backed up Profiles
 Gui Font
+;____________________________________________________
+;settings
 Gui Tab, 2
-Gui Add, CheckBox, x8 y32 w156 h23, Check updates on startup
+Gui Add, CheckBox, x8 y32 w156 h23 vcheckup gAutoUpdates, Check updates on startup
+IfExist, %A_ScriptDir%\%appfoldername%\Settings\Settings.ini
+{
+    IniRead, t_checkup, %A_ScriptDir%\%appfoldername%\Settings\Settings.ini, Settings, Updates
+	GuiControl,,checkup,%t_checkup%
+}
 Gui Add, GroupBox, x6 y134 w176 h95, Delete
-Gui Add, Button, x16 y200 w154 h23, Delete all files
-Gui Add, Button, x16 y176 w154 h23, Delete backup
-Gui Add, Button, x16 y152 w155 h23, Delete app settings
+Gui Add, Button, x16 y200 w154 h23 gDeleteAllFiles, Delete all files
+Gui Add, Button, x16 y176 w154 h23 gDeleteBackups, Delete backups
+Gui Add, Button, x16 y152 w155 h23 gDeleteAppSettings, Delete app settings
 
 Gui Show, w406 h237, LogitechBackupProfilesAhk
+;____________________________________________________________
+;//////////////[Check for updates]///////////////
+IfExist, %A_ScriptDir%\%appfoldername%\Settings\Settings.ini
+{
+    IniRead, t_checkup, %A_ScriptDir%\%appfoldername%\Settings\Settings.ini, Settings, Updates
+    if(t_checkup == 1)
+    {
+        goto checkForupdates
+    }
+}
 Return
 ;____________________________________________________________
 ;____________________________________________________________
@@ -33,6 +50,22 @@ Return
 GuiEscape:
 GuiClose:
     ExitApp
+;____________________________________________________________
+;____________________________________________________________
+;//////////////[Delete files]///////////////
+
+;____________________________________________________________
+;____________________________________________________________
+;//////////////[Delete files]///////////////
+DeleteAllFiles:
+MsgBox, There are no files
+return
+DeleteBackups:
+MsgBox, There are no files
+return
+DeleteAppSettings:
+MsgBox, There are no files
+return
 ;____________________________________________________________
 ;____________________________________________________________
 ;//////////////[checkForupdates]///////////////
@@ -63,7 +96,6 @@ if(newversion != "")
         }
     }
 }
-btn_pressed_update = 0
 return
 ;Check updates on start
 AutoUpdates:
