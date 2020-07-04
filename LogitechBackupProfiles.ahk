@@ -5,7 +5,7 @@
 ;//////////////[variables]///////////////
 SetWorkingDir %A_ScriptDir%
 appfoldername = LogitechBackupProfilesAhk
-version = 0.3
+version = 0.31
 ;____________________________________________________________
 ;____________________________________________________________
 ;//////////////[Gui]///////////////
@@ -13,10 +13,10 @@ Gui -MaximizeBox
 Gui Add, Tab3, x0 y0 w408 h241, Home|Settings
 Gui Tab, 1
 Gui Font, s13
-Gui Add, Button gbackup, x0 y32 w405 h41, Backup logitech GHub profiles
+Gui Add, Button, x0 y32 w405 h41 gbackup, Backup logitech GHub profiles
 Gui Font
 Gui Font, s14
-Gui Add, Button gload, x0 y80 w404 h49, Load Backed up Profiles
+Gui Add, Button, x0 y80 w404 h49 gload, Load Backed up Profiles
 Gui Font
 ;____________________________________________________
 ;settings
@@ -116,9 +116,15 @@ if(newversion != "")
             ;Download update
             FileMove, %A_ScriptFullPath%, %A_ScriptDir%\%appfoldername%\%A_ScriptName%, 1
             sleep 1000
-            UrlDownloadToFile, "https://raw.githubusercontent.com/veskeli/LogitechBackupProfilesAhk/master/LogitechBackupProfiles.ahk", %A_ScriptFullPath%
+            UrlDownloadToFile, https://raw.githubusercontent.com/veskeli/LogitechBackupProfilesAhk/master/LogitechBackupProfiles.ahk, %A_ScriptFullPath%
             Sleep 1000
-			Run, %A_ScriptFullPath%
+            loop
+            {
+                IfExist %A_ScriptFullPath%
+                {
+                    Run, %A_ScriptFullPath%
+                }
+            }
 			ExitApp
         }
     }
