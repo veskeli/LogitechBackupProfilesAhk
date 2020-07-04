@@ -5,7 +5,7 @@
 ;//////////////[variables]///////////////
 SetWorkingDir %A_ScriptDir%
 appfoldername = LogitechBackupProfilesAhk
-version = 0.2
+version = 0.3
 ;____________________________________________________________
 ;____________________________________________________________
 ;//////////////[Gui]///////////////
@@ -13,10 +13,10 @@ Gui -MaximizeBox
 Gui Add, Tab3, x0 y0 w408 h241, Home|Settings
 Gui Tab, 1
 Gui Font, s13
-Gui Add, Button, x0 y32 w405 h41, Backup logitech GHub profiles
+Gui Add, Button gbackup, x0 y32 w405 h41, Backup logitech GHub profiles
 Gui Font
 Gui Font, s14
-Gui Add, Button, x0 y80 w404 h49, Load Backed up Profiles
+Gui Add, Button gload, x0 y80 w404 h49, Load Backed up Profiles
 Gui Font
 ;____________________________________________________
 ;settings
@@ -52,19 +52,46 @@ GuiClose:
     ExitApp
 ;____________________________________________________________
 ;____________________________________________________________
-;//////////////[Delete files]///////////////
-
+;//////////////[Backup and load]///////////////
+backup:
+MsgBox, not working yet
+return
+load:
+MsgBox, backup not found
+return
 ;____________________________________________________________
 ;____________________________________________________________
 ;//////////////[Delete files]///////////////
 DeleteAllFiles:
-MsgBox, There are no files
-return
-DeleteBackups:
-MsgBox, There are no files
+MsgBox, 1,Are you sure?,All files will be deleted!, 15
+IfMsgBox, Cancel
+{
+	return
+}
+else
+{
+    FileRemoveDir, %A_AppData%\%appfoldername%,1
+    FileRemoveDir, %A_ScriptDir%\%appfoldername%,1
+    ;Reset all settings when settings files are removed
+    GuiControl,,checkup,0
+}
 return
 DeleteAppSettings:
-MsgBox, There are no files
+MsgBox, 1,Are you sure?,All files will be deleted!, 15
+IfMsgBox, Cancel
+{
+	return
+}
+else
+{
+    FileRemoveDir, %A_AppData%\%appfoldername%\Settings,1
+    FileRemoveDir, %A_ScriptDir%\%appfoldername%\Settings,1
+    ;Reset all settings when settings files are removed
+    GuiControl,,checkup,0
+}
+return
+DeleteBackups:
+MsgBox, There are no backups
 return
 ;____________________________________________________________
 ;____________________________________________________________
