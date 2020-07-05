@@ -5,7 +5,7 @@
 ;//////////////[variables]///////////////
 SetWorkingDir %A_ScriptDir%
 appfoldername = LogitechBackupProfilesAhk
-version = 0.31
+version = 0.4
 ;____________________________________________________________
 ;____________________________________________________________
 ;//////////////[Gui]///////////////
@@ -31,6 +31,7 @@ Gui Add, GroupBox, x6 y134 w176 h95, Delete
 Gui Add, Button, x16 y200 w154 h23 gDeleteAllFiles, Delete all files
 Gui Add, Button, x16 y176 w154 h23 gDeleteBackups, Delete backups
 Gui Add, Button, x16 y152 w155 h23 gDeleteAppSettings, Delete app settings
+Gui Add, Text, x192 y208 w205 h23 +0x200, Version = %version%
 
 Gui Show, w406 h237, LogitechBackupProfilesAhk
 ;____________________________________________________________
@@ -54,10 +55,41 @@ GuiClose:
 ;____________________________________________________________
 ;//////////////[Backup and load]///////////////
 backup:
-MsgBox, not working yet
+IfExist C:\Users\%A_UserName%\AppData\Local\LGHUB
+{
+    FileCreateDir, %A_ScriptDir%\%appfoldername%\Backups
+    FileCopyDir, C:\Users\%A_UserName%\AppData\Local\LGHUB, %A_ScriptDir%\%appfoldername%\Backups\LGHUB, 1
+    if ErrorLevel
+    {
+        MsgBox,,Backup failed,Backup failed,10
+    }
+    else
+    {
+        MsgBox,,Backed up,Backed up to %A_ScriptDir%\%appfoldername%\Backups,10
+    }
+}
+else
+{
+    MsgBox, LGHUB files not found
+}
 return
 load:
-MsgBox, backup not found
+IfExist %A_ScriptDir%\%appfoldername%\Backups
+{
+    FileCopyDir, %A_ScriptDir%\%appfoldername%\Backups\LGHUB, C:\Users\%A_UserName%\AppData\Local\LGHUB, 1
+    if ErrorLevel
+    {
+        MsgBox,,Backup failed,Something went wrong,10
+    }
+    else
+    {
+        MsgBox,,Backup loaded,Backup loaded,10
+    }
+}
+else
+{
+    MsgBox,,Error,Backup not found,10
+}
 return
 ;____________________________________________________________
 ;____________________________________________________________
@@ -91,7 +123,18 @@ else
 }
 return
 DeleteBackups:
-MsgBox, There are no backups
+MsgBox, 1,Are you sure?,All Backups will be deleted!, 15
+IfMsgBox, Cancel
+{
+	return
+}
+else
+{
+    FileRemoveDir, %A_AppData%\%appfoldername%\Backups,1
+    FileRemoveDir, %A_ScriptDir%\%appfoldername%\Backups,1
+    ;Reset all settings when settings files are removed
+    GuiControl,,checkup,0
+}
 return
 ;____________________________________________________________
 ;____________________________________________________________
