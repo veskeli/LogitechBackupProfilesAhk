@@ -5,7 +5,11 @@
 ;//////////////[variables]///////////////
 SetWorkingDir %A_ScriptDir%
 appfoldername = LogitechBackupProfilesAhk
-version = 0.4
+version = 0.41
+IfExist, %A_ScriptDir%\%appfoldername%\LogitechBackupProfiles.ahk
+{
+    FileDelete, %A_ScriptDir%\%appfoldername%\LogitechBackupProfiles.ahk
+}
 ;____________________________________________________________
 ;____________________________________________________________
 ;//////////////[Gui]///////////////
