@@ -4,11 +4,16 @@
 ;____________________________________________________________
 ;//////////////[variables]///////////////
 SetWorkingDir %A_ScriptDir%
+LGHUBfolder_f = C:\Users\%A_UserName%\AppData\Local\LGHUB
 appfoldername = LogitechBackupProfilesAhk
-version = 0.41
-IfExist, %A_ScriptDir%\%appfoldername%\LogitechBackupProfiles.ahk
+appfolder_f = %A_AppData%\%appfoldername%
+backupfolder_f = %A_AppData%\%appfoldername%\Backups
+settingsfolder_f = %A_AppData%\%appfoldername%\Settings
+settingsini_ini = %settingsfolder_f%\Settings.ini
+version = 0.49
+IfExist, %A_AppData%\%appfoldername%temp\LogitechBackupProfiles.ahk
 {
-    FileDelete, %A_ScriptDir%\%appfoldername%\LogitechBackupProfiles.ahk
+    FileDelete, %A_AppData%\%appfoldername%\LogitechBackupProfilesOld.ahk
 }
 ;____________________________________________________________
 ;____________________________________________________________
@@ -26,9 +31,9 @@ Gui Font
 ;settings
 Gui Tab, 2
 Gui Add, CheckBox, x8 y32 w156 h23 vcheckup gAutoUpdates, Check updates on startup
-IfExist, %A_ScriptDir%\%appfoldername%\Settings\Settings.ini
+IfExist, %A_AppData%\%appfoldername%\Settings\Settings.ini
 {
-    IniRead, t_checkup, %A_ScriptDir%\%appfoldername%\Settings\Settings.ini, Settings, Updates
+    IniRead, t_checkup, %A_AppData%\%appfoldername%\Settings\Settings.ini, Settings, Updates
 	GuiControl,,checkup,%t_checkup%
 }
 Gui Add, GroupBox, x6 y134 w176 h95, Delete
@@ -36,17 +41,34 @@ Gui Add, Button, x16 y200 w154 h23 gDeleteAllFiles, Delete all files
 Gui Add, Button, x16 y176 w154 h23 gDeleteBackups, Delete backups
 Gui Add, Button, x16 y152 w155 h23 gDeleteAppSettings, Delete app settings
 Gui Add, Text, x192 y208 w205 h23 +0x200, Version = %version%
+Gui Add, Button, x197 y152 w90 h38 gOpenBackupFolder, Open backup folder ; open
+Gui Add, Button, x288 y152 w90 h38 gOpenLGHUBFolder, Open Logitech folder
+;Backup settings
+Gui Add, GroupBox, x7 y50 w170 h80, Backup settings
+Gui Add, Text, x15 y71 w75 h23 +0x200, Max Backups:
+Gui Add, DropDownList, +Disabled x94 y70 w60,  1||2|3|4|5|6
+Gui Add, Button, x280 y25 w120 h40 gShortcut_to_desktop , Create shortcut to desktop
 
 Gui Show, w406 h237, LogitechBackupProfilesAhk
 ;____________________________________________________________
 ;//////////////[Check for updates]///////////////
-IfExist, %A_ScriptDir%\%appfoldername%\Settings\Settings.ini
+IfExist, %A_AppData%\%appfoldername%\Settings\Settings.ini
 {
-    IniRead, t_checkup, %A_ScriptDir%\%appfoldername%\Settings\Settings.ini, Settings, Updates
+    IniRead, t_checkup, %A_AppData%\%appfoldername%\Settings\Settings.ini, Settings, Updates
     if(t_checkup == 1)
     {
         goto checkForupdates
     }
+}
+;____________________________________________________________
+;//////////////[check for old version files]///////////////
+IfExist %A_ScriptDir%\%appfoldername%
+{
+    FileMoveDir, %A_ScriptDir%\%appfoldername% , %A_AppData%\%appfoldername%
+}
+IfExist %A_AppData%\%backupfolder_f%\LGHUB
+{
+    FileMoveDir, %A_AppData%\%backupfolder_f%\LGHUB , %A_AppData%\%backupfolder_f%\LGHUB_Backup1
 }
 Return
 ;____________________________________________________________
@@ -61,15 +83,16 @@ GuiClose:
 backup:
 IfExist C:\Users\%A_UserName%\AppData\Local\LGHUB
 {
-    FileCreateDir, %A_ScriptDir%\%appfoldername%\Backups
-    FileCopyDir, C:\Users\%A_UserName%\AppData\Local\LGHUB, %A_ScriptDir%\%appfoldername%\Backups\LGHUB, 1
+    FileCreateDir, %A_AppData%\%appfoldername%
+    FileCreateDir, %A_AppData%\%appfoldername%\Backups
+    FileCopyDir, C:\Users\%A_UserName%\AppData\Local\LGHUB, %A_AppData%\%appfoldername%\Backups\LGHUB_Backup1, 1
     if ErrorLevel
     {
         MsgBox,,Backup failed,Backup failed,10
     }
     else
     {
-        MsgBox,,Backed up,Backed up to %A_ScriptDir%\%appfoldername%\Backups,10
+        MsgBox,,Backed up,Backed up to %A_AppData%\%appfoldername%\Backups,10
     }
 }
 else
@@ -78,9 +101,9 @@ else
 }
 return
 load:
-IfExist %A_ScriptDir%\%appfoldername%\Backups
+IfExist %A_AppData%\%appfoldername%\Backups
 {
-    FileCopyDir, %A_ScriptDir%\%appfoldername%\Backups\LGHUB, C:\Users\%A_UserName%\AppData\Local\LGHUB, 1
+    FileCopyDir, %A_AppData%\%appfoldername%\Backups\LGHUB, C:\Users\%A_UserName%\AppData\Local\LGHUB, 1
     if ErrorLevel
     {
         MsgBox,,Backup failed,Something went wrong,10
@@ -151,7 +174,7 @@ whr.WaitForResponse()
 newversion := whr.ResponseText
 if(newversion != "")
 {
-    if(newversion != version)
+    if(newversion > version)
     {
         MsgBox, 1,Update,New version is  %newversion% `nOld is %version% `nUpdate now?
         IfMsgBox, Cancel
@@ -161,7 +184,8 @@ if(newversion != "")
         else
         {
             ;Download update
-            FileMove, %A_ScriptFullPath%, %A_ScriptDir%\%appfoldername%\%A_ScriptName%, 1
+            FileCreateDir, %A_AppData%\%appfoldername%
+            FileMove, %A_ScriptFullPath%, %A_AppData%\%appfoldername%temp\%A_ScriptName%Old, 1
             sleep 1000
             UrlDownloadToFile, https://raw.githubusercontent.com/veskeli/LogitechBackupProfilesAhk/master/LogitechBackupProfiles.ahk, %A_ScriptFullPath%
             Sleep 1000
@@ -180,6 +204,23 @@ return
 ;Check updates on start
 AutoUpdates:
 Gui, Submit, Nohide
-FileCreateDir, %A_ScriptDir%\%appfoldername%\Settings
-IniWrite, %checkup%, %A_ScriptDir%\%appfoldername%\Settings\Settings.ini, Settings, Updates
+FileCreateDir, %A_AppData%\%appfoldername%\Settings
+IniWrite, %checkup%, %A_AppData%\%appfoldername%\Settings\Settings.ini, Settings, Updates
+return
+;Shortcut
+Shortcut_to_desktop:
+FileCreateShortcut,"%A_ScriptFullPath%", %A_Desktop%\LogitechBackupProfiles.lnk
+return
+;open backup folder
+OpenBackupFolder:
+IfExist %backupfolder_f%
+{
+    run, %backupfolder_f%
+}
+return
+OpenLGHUBFolder:
+IfExist %LGHUBfolder_f%
+{
+    run, %LGHUBfolder_f%
+}
 return
