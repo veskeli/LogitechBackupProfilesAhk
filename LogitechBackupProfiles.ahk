@@ -10,11 +10,23 @@ appfolder_f = %A_AppData%\%appfoldername%
 backupfolder_f = %A_AppData%\%appfoldername%\Backups
 settingsfolder_f = %A_AppData%\%appfoldername%\Settings
 settingsini_ini = %settingsfolder_f%\Settings.ini
-version = 0.49
-IfExist, %A_AppData%\%appfoldername%temp\LogitechBackupProfiles.ahk
-{
-    FileDelete, %A_AppData%\%appfoldername%\LogitechBackupProfilesOld.ahk
-}
+update_temp_file = %A_AppData%\%appfoldername%temp\OldFile.ahk
+;Backups
+Backup_current = 1
+Backups_max = 2
+version = 0.5
+;set global variables
+global LGHUBfolder_f
+global appfoldername
+global appfolder_f
+global backupfolder_f
+global settingsfolder_f
+global settingsini_ini
+global Backup_current
+global Backups_max
+global update_temp_file
+IfExist, %update_temp_file% {FileDelete, %update_temp_file%} ;delete old file after update
+IfExist, %A_AppData%\%appfoldername%temp\LogitechBackupProfilesAhkOld.ahk {FileDelete, %update_temp_file%} ;check for before 0.5 file
 ;____________________________________________________________
 ;____________________________________________________________
 ;//////////////[Gui]///////////////
@@ -31,9 +43,9 @@ Gui Font
 ;settings
 Gui Tab, 2
 Gui Add, CheckBox, x8 y32 w156 h23 vcheckup gAutoUpdates, Check updates on startup
-IfExist, %A_AppData%\%appfoldername%\Settings\Settings.ini
+IfExist, %settingsini_ini%
 {
-    IniRead, t_checkup, %A_AppData%\%appfoldername%\Settings\Settings.ini, Settings, Updates
+    IniRead, t_checkup, %settingsini_ini%, Settings, Updates
 	GuiControl,,checkup,%t_checkup%
 }
 Gui Add, GroupBox, x6 y134 w176 h95, Delete
@@ -46,29 +58,29 @@ Gui Add, Button, x288 y152 w90 h38 gOpenLGHUBFolder, Open Logitech folder
 ;Backup settings
 Gui Add, GroupBox, x7 y50 w170 h80, Backup settings
 Gui Add, Text, x15 y71 w75 h23 +0x200, Max Backups:
-Gui Add, DropDownList, +Disabled x94 y70 w60,  1||2|3|4|5|6
+Gui Add, DropDownList, +Disabled x94 y70 w60,  1||2
 Gui Add, Button, x280 y25 w120 h40 gShortcut_to_desktop , Create shortcut to desktop
 
 Gui Show, w406 h237, LogitechBackupProfilesAhk
 ;____________________________________________________________
 ;//////////////[Check for updates]///////////////
-IfExist, %A_AppData%\%appfoldername%\Settings\Settings.ini
+IfExist, %settingsini_ini%
 {
-    IniRead, t_checkup, %A_AppData%\%appfoldername%\Settings\Settings.ini, Settings, Updates
+    IniRead, t_checkup, %settingsini_ini%, Settings, Updates
     if(t_checkup == 1)
     {
         goto checkForupdates
     }
 }
 ;____________________________________________________________
-;//////////////[check for old version files]///////////////
+;//////////////[check for old version files (used by this script before 0.49)]///////////////
 IfExist %A_ScriptDir%\%appfoldername%
 {
-    FileMoveDir, %A_ScriptDir%\%appfoldername% , %A_AppData%\%appfoldername%
+    FileMoveDir, %A_ScriptDir%\%appfoldername% , %appfolder_f%  ;move all settings and backups to appdata
 }
-IfExist %A_AppData%\%backupfolder_f%\LGHUB
+IfExist %backupfolder_f%\LGHUB
 {
-    FileMoveDir, %A_AppData%\%backupfolder_f%\LGHUB , %A_AppData%\%backupfolder_f%\LGHUB_Backup1
+    FileMoveDir, %backupfolder_f%\LGHUB , %backupfolder_f%\LGHUB_Backup1 ;rename old backup file
 }
 Return
 ;____________________________________________________________
@@ -79,44 +91,14 @@ GuiClose:
     ExitApp
 ;____________________________________________________________
 ;____________________________________________________________
-;//////////////[Backup and load]///////////////
+;//////////////[Backup]///////////////
 backup:
-IfExist C:\Users\%A_UserName%\AppData\Local\LGHUB
-{
-    FileCreateDir, %A_AppData%\%appfoldername%
-    FileCreateDir, %A_AppData%\%appfoldername%\Backups
-    FileCopyDir, C:\Users\%A_UserName%\AppData\Local\LGHUB, %A_AppData%\%appfoldername%\Backups\LGHUB_Backup1, 1
-    if ErrorLevel
-    {
-        MsgBox,,Backup failed,Backup failed,10
-    }
-    else
-    {
-        MsgBox,,Backed up,Backed up to %A_AppData%\%appfoldername%\Backups,10
-    }
-}
-else
-{
-    MsgBox, LGHUB files not found
-}
+    Backup(Backup_current)
 return
+;____________________________________________________________
+;//////////////[load]///////////////
 load:
-IfExist %A_AppData%\%appfoldername%\Backups
-{
-    FileCopyDir, %A_AppData%\%appfoldername%\Backups\LGHUB, C:\Users\%A_UserName%\AppData\Local\LGHUB, 1
-    if ErrorLevel
-    {
-        MsgBox,,Backup failed,Something went wrong,10
-    }
-    else
-    {
-        MsgBox,,Backup loaded,Backup loaded,10
-    }
-}
-else
-{
-    MsgBox,,Error,Backup not found,10
-}
+    Load(Backup_current)
 return
 ;____________________________________________________________
 ;____________________________________________________________
@@ -129,8 +111,8 @@ IfMsgBox, Cancel
 }
 else
 {
-    FileRemoveDir, %A_AppData%\%appfoldername%,1
-    FileRemoveDir, %A_ScriptDir%\%appfoldername%,1
+    FileRemoveDir, %appfolder_f%,1
+    FileRemoveDir, %A_ScriptDir%\%appfoldername%,1 ;check for old files
     ;Reset all settings when settings files are removed
     GuiControl,,checkup,0
 }
@@ -143,8 +125,8 @@ IfMsgBox, Cancel
 }
 else
 {
-    FileRemoveDir, %A_AppData%\%appfoldername%\Settings,1
-    FileRemoveDir, %A_ScriptDir%\%appfoldername%\Settings,1
+    FileRemoveDir, %settingsfolder_f%,1
+    FileRemoveDir, %A_ScriptDir%\%appfoldername%\Settings,1 ;check for old files
     ;Reset all settings when settings files are removed
     GuiControl,,checkup,0
 }
@@ -157,8 +139,8 @@ IfMsgBox, Cancel
 }
 else
 {
-    FileRemoveDir, %A_AppData%\%appfoldername%\Backups,1
-    FileRemoveDir, %A_ScriptDir%\%appfoldername%\Backups,1
+    FileRemoveDir, %backupfolder_f%,1
+    FileRemoveDir, %A_ScriptDir%\%appfoldername%\Backups,1 ;check for old files
     ;Reset all settings when settings files are removed
     GuiControl,,checkup,0
 }
@@ -184,8 +166,8 @@ if(newversion != "")
         else
         {
             ;Download update
-            FileCreateDir, %A_AppData%\%appfoldername%
-            FileMove, %A_ScriptFullPath%, %A_AppData%\%appfoldername%temp\%A_ScriptName%Old, 1
+            FileCreateDir, %appfolder_f%
+            FileMove, %A_ScriptFullPath%, %update_temp_file%, 1
             sleep 1000
             UrlDownloadToFile, https://raw.githubusercontent.com/veskeli/LogitechBackupProfilesAhk/master/LogitechBackupProfiles.ahk, %A_ScriptFullPath%
             Sleep 1000
@@ -204,8 +186,8 @@ return
 ;Check updates on start
 AutoUpdates:
 Gui, Submit, Nohide
-FileCreateDir, %A_AppData%\%appfoldername%\Settings
-IniWrite, %checkup%, %A_AppData%\%appfoldername%\Settings\Settings.ini, Settings, Updates
+FileCreateDir, %settingsfolder_f%
+IniWrite, %checkup%, %settingsini_ini%, Settings, Updates
 return
 ;Shortcut
 Shortcut_to_desktop:
@@ -224,3 +206,61 @@ IfExist %LGHUBfolder_f%
     run, %LGHUBfolder_f%
 }
 return
+;____________________________________________________________
+;____________________________________________________________
+;//////////////[Functions]///////////////
+Backup(BackupNumber)
+{
+    IfExist %LGHUBfolder_f%
+    {
+        FileCreateDir, %appfolder_f%
+        IfNotExist %appfolder_f%{MsgBox,, Backup Failed,Can't create folder,10 return}
+        FileCreateDir, %backupfolder_f%
+        IfNotExist %backupfolder_f%{MsgBox,, Backup Failed,Can't create folder,10 return}
+        IfExist %backupfolder_f%\LGHUB_Backup%BackupNumber%
+        {
+            FileRemoveDir %backupfolder_f%\LGHUB_Backup%BackupNumber%,1
+        }
+        FileCopyDir, %LGHUBfolder_f%, %backupfolder_f%\LGHUB_Backup%BackupNumber%, 1
+        if ErrorLevel
+        {
+            MsgBox,,Backup failed,Failed to copy files,10
+        }
+        else
+        {
+            MsgBox,,Backed up,Backed up to %backupfolder_f%,10
+        }
+    }
+    else
+    {
+        MsgBox, LGHUB files not found %LGHUBfolder_f% dasd
+    }
+    return
+}
+Load(BackupNumber)
+{
+    IfExist %backupfolder_f%
+    {
+        ;make restore file
+        IfExist %backupfolder_f%\LGHUB_BackupRestore
+        {
+            FileRemoveDir %backupfolder_f%\LGHUB_BackupRestore,1
+        }
+        FileCopyDir, %LGHUBfolder_f%, %backupfolder_f%\LGHUB_BackupRestore, 1
+        ;move backup to LGHUB folder
+        FileCopyDir, %backupfolder_f%\LGHUB_Backup%BackupNumber%, %LGHUBfolder_f%, 1
+        if ErrorLevel
+        {
+            MsgBox,,Backup failed,Something went wrong,10
+        }
+        else
+        {
+            MsgBox,,Backup loaded,Backup loaded,10
+        }
+    }
+    else
+    {
+        MsgBox,,Error,Backup not found,10
+    }
+    return
+}
