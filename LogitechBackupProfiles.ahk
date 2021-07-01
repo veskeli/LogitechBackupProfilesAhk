@@ -5,16 +5,17 @@
 ;//////////////[variables]///////////////
 SetWorkingDir %A_ScriptDir%
 LGHUBfolder_f = C:\Users\%A_UserName%\AppData\Local\LGHUB
+ScriptName = LogitechBackupProfiles
 appfoldername = LogitechBackupProfilesAhk
 appfolder_f = %A_AppData%\%appfoldername%
 backupfolder_f = %A_AppData%\%appfoldername%\Backups
 settingsfolder_f = %A_AppData%\%appfoldername%\Settings
 settingsini_ini = %settingsfolder_f%\Settings.ini
-update_temp_file = %A_AppData%\%appfoldername%temp\OldFile.ahk
+update_temp_file = %A_AppData%\%appfoldername%\temp\OldFile.ahk
 ;Backups
 Backup_current = 1
 Backups_max = 2
-version = 0.5
+version = 0.51
 ;set global variables
 global LGHUBfolder_f
 global appfoldername
@@ -25,8 +26,18 @@ global settingsini_ini
 global Backup_current
 global Backups_max
 global update_temp_file
-IfExist, %update_temp_file% {FileDelete, %update_temp_file%} ;delete old file after update
-IfExist, %A_AppData%\%appfoldername%temp\LogitechBackupProfilesAhkOld.ahk {FileDelete, %update_temp_file%} ;check for before 0.5 file
+IfExist %update_temp_file% 
+{
+    FileDelete, %update_temp_file% ;delete old file after update
+} 
+IfExist %A_AppData%\%appfoldername%\temp\LogitechBackupProfilesAhkOld.ahk 
+{
+    FileDelete, %A_AppData%\%appfoldername%\temp\LogitechBackupProfilesAhkOld.ahk ;check for before 0.5 file
+}
+IfExist %A_AppData%\%appfoldername%\LogitechBackupProfiles.ahk 
+{
+    FileDelete, %A_AppData%\%appfoldername%\LogitechBackupProfiles.ahk ;check for before 0.5 file
+}
 ;____________________________________________________________
 ;____________________________________________________________
 ;//////////////[Gui]///////////////
@@ -60,6 +71,8 @@ Gui Add, GroupBox, x7 y50 w170 h80, Backup settings
 Gui Add, Text, x15 y71 w75 h23 +0x200, Max Backups:
 Gui Add, DropDownList, +Disabled x94 y70 w60,  1||2
 Gui Add, Button, x280 y25 w120 h40 gShortcut_to_desktop , Create shortcut to desktop
+Gui Font, s11
+Gui Add, Button, x197 y99 w181 h51 gRestoreLast, Restore old GHUB files(accidentally pressed load)
 
 Gui Show, w406 h237, LogitechBackupProfilesAhk
 ;____________________________________________________________
@@ -84,23 +97,24 @@ IfExist %backupfolder_f%\LGHUB
 }
 Return
 ;____________________________________________________________
-;____________________________________________________________
 ;//////////////[Gui escape]///////////////
 GuiEscape:
 GuiClose:
     ExitApp
 ;____________________________________________________________
 ;____________________________________________________________
-;//////////////[Backup]///////////////
+;//////////////[Backup and load]///////////////
 backup:
     Backup(Backup_current)
 return
-;____________________________________________________________
-;//////////////[load]///////////////
 load:
     Load(Backup_current)
 return
 ;____________________________________________________________
+;//////////////[Restore]///////////////
+RestoreLast:
+    Restore(Backup_current)
+return
 ;____________________________________________________________
 ;//////////////[Delete files]///////////////
 DeleteAllFiles:
@@ -214,9 +228,17 @@ Backup(BackupNumber)
     IfExist %LGHUBfolder_f%
     {
         FileCreateDir, %appfolder_f%
-        IfNotExist %appfolder_f%{MsgBox,, Backup Failed,Can't create folder,10 return}
+        IfNotExist %appfolder_f%
+        {
+            MsgBox,, Backup Failed,Can't create folder,10
+            return
+        }
         FileCreateDir, %backupfolder_f%
-        IfNotExist %backupfolder_f%{MsgBox,, Backup Failed,Can't create folder,10 return}
+        IfNotExist %backupfolder_f%
+        {
+            MsgBox,, Backup Failed,Can't create folder,10 
+            return
+        }
         IfExist %backupfolder_f%\LGHUB_Backup%BackupNumber%
         {
             FileRemoveDir %backupfolder_f%\LGHUB_Backup%BackupNumber%,1
@@ -263,4 +285,25 @@ Load(BackupNumber)
         MsgBox,,Error,Backup not found,10
     }
     return
+}
+Restore(Backup_current)
+{
+    IfExist %backupfolder_f%
+    {
+        IfNotExist %backupfolder_f%\LGHUB_BackupRestore
+        {
+            MsgBox,, Restore Failed,Nothing to restore,10
+            return
+        }
+        ;IfNotExist %backupfolder_f%\LGHUB_BackupRestore{MsgBox,, Restore Failed,Nothing to restore,10 return}
+        FileCopyDir, %backupfolder_f%\LGHUB_BackupRestore, %backupfolder_f%\LGHUB_Backup%BackupNumber%, 1
+        if ErrorLevel
+        {
+            MsgBox,,Restore failed,Something went wrong,10
+        }
+        else
+        {
+            MsgBox,,Restore loaded,Restore loaded,10
+        }
+    }
 }
