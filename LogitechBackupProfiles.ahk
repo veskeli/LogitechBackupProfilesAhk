@@ -15,7 +15,7 @@ update_temp_file = %A_AppData%\%appfoldername%\temp\OldFile.ahk
 ;Backups
 Backup_current = 1
 Backups_max = 2
-version = 0.51
+version = 0.52
 ;set global variables
 global LGHUBfolder_f
 global appfoldername
@@ -73,6 +73,11 @@ Gui Add, DropDownList, +Disabled x94 y70 w60,  1||2
 Gui Add, Button, x280 y25 w120 h40 gShortcut_to_desktop , Create shortcut to desktop
 Gui Font, s11
 Gui Add, Button, x197 y99 w181 h51 gRestoreLast, Restore old GHUB files(accidentally pressed load)
+IfExist, %settingsini_ini%
+{
+    IniWrite, %A_ScriptFullPath%, %settingsini_ini%, Info, ScriptPath
+    IniWrite, %version%, %settingsini_ini%, Info, Version
+}
 
 Gui Show, w406 h237, LogitechBackupProfilesAhk
 ;____________________________________________________________
@@ -132,7 +137,7 @@ else
 }
 return
 DeleteAppSettings:
-MsgBox, 1,Are you sure?,All files will be deleted!, 15
+MsgBox, 1,Are you sure?,All Settings be deleted!, 15
 IfMsgBox, Cancel
 {
 	return
@@ -277,7 +282,7 @@ Load(BackupNumber)
         }
         else
         {
-            MsgBox,,Backup loaded,Backup loaded,10
+            MsgBox,,Backup loaded, Backup loaded. `nPlease restart GHub to see changes,10
         }
     }
     else
